@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thesis — AI Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --void: #050507;
+  --deep: #0a0a0f;
+  --surface: #0f0f18;
+  --border: rgba(255,255,255,0.07);
+  --border-bright: rgba(255,255,255,0.15);
+  --cyan: #00e5ff;
+  --cyan-dim: rgba(0,229,255,0.15);
+  --cyan-glow: rgba(0,229,255,0.4);
+  --white: #f0f0f8;
+  --grey: #6b6b88;
+  --grey-light: #9898b8;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--void);
+  color: var(--white);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* CUSTOM CURSOR */
+.cursor {
+  width: 8px; height: 8px;
+  background: var(--cyan);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s, width 0.2s, height 0.2s, opacity 0.2s;
+  mix-blend-mode: screen;
+}
+.cursor-ring {
+  width: 32px; height: 32px;
+  border: 1px solid rgba(0,229,255,0.4);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease-out, width 0.3s, height 0.3s, opacity 0.2s;
+}
+body:hover .cursor { opacity: 1; }
+
+/* NOISE OVERLAY */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.4;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 3rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,5,7,0.8);
+  backdrop-filter: blur(20px);
+}
+.nav-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.nav-logo-dot {
+  width: 6px; height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan);
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--cyan); opacity: 1; }
+  50% { box-shadow: 0 0 16px var(--cyan), 0 0 32px var(--cyan-glow); opacity: 0.7; }
+}
+.nav-right { display: flex; align-items: center; gap: 2.5rem; }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--grey);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--cyan); }
+.nav-cta {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--void);
+  background: var(--cyan);
+  padding: 0.6rem 1.4rem;
+  text-decoration: none;
+  font-weight: 600;
+  transition: box-shadow 0.2s;
+}
+.nav-cta:hover { box-shadow: 0 0 20px var(--cyan-glow); }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8rem 3rem 5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated grid bg */
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+  animation: gridDrift 20s linear infinite;
+}
+@keyframes gridDrift {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 60px; }
+}
+
+.hero-glow {
+  position: absolute;
+  top: 20%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(0,229,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-content { position: relative; z-index: 2; max-width: 1100px; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--border-bright);
+  background: rgba(0,229,255,0.05);
+  padding: 0.4rem 1rem;
+  margin-bottom: 2.5rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  letter-spacing: 0.1em;
+  animation: fadeUp 0.6s ease both 0.1s;
+}
+.badge-blink {
+  width: 6px; height: 6px;
+  background: var(--cyan);
+  border-radius: 50%;
+  animation: blink 1.2s step-end infinite;
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+.hero-headline {
+  font-size: clamp(4rem, 9vw, 9rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin-bottom: 2.5rem;
+  animation: fadeUp 0.6s ease both 0.25s;
+}
+.hero-headline .line-2 {
+  display: block;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+}
+.hero-headline .accent { color: var(--cyan); }
+
+.hero-sub {
+  max-width: 540px;
+  font-size: 1rem;
+  color: var(--grey-light);
+  line-height: 1.8;
+  margin-bottom: 3.5rem;
+  font-weight: 400;
+  animation: fadeUp 0.6s ease both 0.4s;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  animation: fadeUp 0.6s ease both 0.55s;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: var(--cyan);
+  color: var(--void);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 1rem 2rem;
+  text-decoration: none;
+  transition: box-shadow 0.25s, gap 0.2s;
+}
+.btn-primary:hover { box-shadow: 0 0 30px var(--cyan-glow); gap: 1.1rem; }
+.btn-secondary {
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--grey-light);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s, gap 0.2s;
+}
+.btn-secondary:hover { color: var(--white); gap: 0.8rem; }
+
+.hero-scroll {
+  position: absolute;
+  bottom: 3rem; left: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 2;
+}
+.scroll-line {
+  width: 40px; height: 1px;
+  background: var(--border-bright);
+  position: relative;
+  overflow: hidden;
+}
+.scroll-line::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: var(--cyan);
+  animation: scanline 2s ease infinite;
+}
+@keyframes scanline { 0% { left: -100%; } 100% { left: 100%; } }
+.scroll-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--grey);
+  text-transform: uppercase;
+}
+
+/* METRICS STRIP */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.metric-item {
+  padding: 2.5rem 3rem;
+  border-right: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.metric-item:last-child { border-right: none; }
+.metric-item:hover { background: rgba(0,229,255,0.03); }
+.metric-item::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  transform: scaleX(0);
+  transition: transform 0.4s;
+}
+.metric-item:hover::before { transform: scaleX(1); }
+.metric-num {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--white);
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+.metric-num sup {
+  font-size: 1rem;
+  color: var(--cyan);
+  font-weight: 400;
+  margin-left: 2px;
+}
+.metric-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--grey);
+  text-transform: uppercase;
+  margin-top: 0.4rem;
+}
+
+/* CAPABILITIES */
+#capabilities {
+  padding: 8rem 3rem;
+  position: relative;
+}
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 5rem;
+}
+.section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.section-desc {
+  max-width: 380px;
+  color: var(--grey-light);
+  font-size: 0.9rem;
+  line-height: 1.8;
+  font-weight: 400;
+}
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+}
+.cap-card {
+  background: var(--deep);
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.cap-card:hover { background: var(--surface); }
+.cap-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s;
+}
+.cap-card:hover::after { transform: scaleX(1); }
+
+.cap-icon {
+  width: 48px; height: 48px;
+  border: 1px solid var(--border-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.8rem;
+  font-size: 1.2rem;
+  color: var(--cyan);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.cap-card:hover .cap-icon {
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px var(--cyan-dim);
+}
+.cap-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--grey);
+  margin-bottom: 0.8rem;
+}
+.cap-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+}
+.cap-desc {
+  font-size: 0.85rem;
+  color: var(--grey-light);
+  line-height: 1.8;
+  font-weight: 400;
+}
+
+/* SHOWCASE */
+#showcase {
+  padding: 4rem 3rem 8rem;
+  border-top: 1px solid var(--border);
+}
+.showcase-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+.showcase-item {
+  background: var(--deep);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s;
+  cursor: pointer;
+}
+.showcase-item:hover { border-color: rgba(0,229,255,0.3); transform: translateY(-4px); }
+.showcase-item.featured {
+  grid-row: span 2;
+}
+.showcase-visual {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--grey);
+}
+.showcase-item.featured .showcase-visual { height: 340px; }
+
+.vis-1 { background: linear-gradient(135deg, #050510 0%, #0a0a2a 100%); }
+.vis-2 { background: linear-gradient(135deg, #050510 0%, #001a1a 100%); }
+.vis-3 { background: linear-gradient(135deg, #050510 0%, #0f0a00 100%); }
+
+/* animated blobs inside showcase */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: blobFloat 6s ease-in-out infinite;
+}
+@keyframes blobFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(15px,-15px) scale(1.1); }
+}
+
+.showcase-info { padding: 1.8rem; }
+.showcase-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 0.5rem;
+}
+.showcase-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.showcase-desc {
+  font-size: 0.82rem;
+  color: var(--grey-light);
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+/* TECHNICAL */
+#technical {
+  background: var(--deep);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 8rem 3rem;
+}
+.tech-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8rem;
+  align-items: start;
+}
+.tech-left .section-title { max-width: 320px; }
+.tech-specs { margin-top: 3rem; display: flex; flex-direction: column; gap: 0; }
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.spec-row:first-child { border-top: 1px solid var(--border); }
+.spec-key {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--grey);
+  text-transform: uppercase;
+}
+.spec-val {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--white);
+}
+.spec-val.highlight { color: var(--cyan); }
+
+.tech-bars { margin-top: 1rem; }
+.bar-item { margin-bottom: 1.8rem; }
+.bar-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.bar-label { font-size: 0.82rem; font-weight: 500; }
+.bar-pct {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--cyan);
+}
+.bar-track {
+  height: 2px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.bar-fill {
+  position: absolute;
+  top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, var(--cyan), rgba(0,229,255,0.4));
+  transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+  width: 0;
+}
+.bar-fill.animate { width: var(--w); }
+
+/* CONTACT */
+#contact {
+  padding: 8rem 3rem;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.contact-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(0,229,255,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.contact-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.contact-headline {
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.5rem;
+  line-height: 1;
+}
+.contact-sub {
+  color: var(--grey-light);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  max-width: 480px;
+  margin: 0 auto 3.5rem;
+  font-weight: 400;
+}
+.contact-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--border-bright);
+  color: var(--white);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 1rem 2rem;
+  text-decoration: none;
+  background: transparent;
+  transition: border-color 0.25s, background 0.25s;
+  cursor: pointer;
+}
+.btn-outline:hover { border-color: var(--cyan); background: var(--cyan-dim); }
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-logo {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.footer-dot {
+  width: 5px; height: 5px;
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--cyan);
+}
+footer p {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--grey);
+}
+.footer-links { display: flex; gap: 2rem; list-style: none; }
+.footer-links a {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--cyan); }
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  nav { padding: 1.2rem 1.5rem; }
+  .nav-links { display: none; }
+  .hero { padding: 6rem 1.5rem 4rem; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .metric-item { padding: 2rem 1.5rem; }
+  #capabilities { padding: 5rem 1.5rem; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .capabilities-grid { grid-template-columns: 1fr; }
+  #showcase { padding: 3rem 1.5rem 5rem; }
+  .showcase-grid { grid-template-columns: 1fr; }
+  .showcase-item.featured { grid-row: span 1; }
+  #technical { padding: 5rem 1.5rem; }
+  .tech-layout { grid-template-columns: 1fr; gap: 3rem; }
+  #contact { padding: 5rem 1.5rem; }
+  footer { flex-direction: column; gap: 1.5rem; padding: 1.5rem; text-align: center; }
+  .footer-links { justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-dot"></span>
+    Thesis
+  </a>
+  <ul class="nav-links">
+    <li><a href="#capabilities">Capabilities</a></li>
+    <li><a href="#showcase">Showcase</a></li>
+    <li><a href="#technical">Technical</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="#contact" class="nav-cta">Try Thesis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-blink"></span>
+      <span>Model v2.4 — Now Available</span>
+    </div>
+    <h1 class="hero-headline">
+      Think<br>
+      <span class="line-2">Deeper.<br></span>
+      Build <span class="accent">Faster.</span>
+    </h1>
+    <p class="hero-sub">Thesis is an advanced AI model engineered for reasoning, creativity, and execution. Built to understand context, generate solutions, and think alongside you.</p>
+    <div class="hero-actions">
+      <a href="#contact" class="btn-primary">Get Early Access →</a>
+      <a href="#capabilities" class="btn-secondary">Explore Capabilities →</a>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    <span class="scroll-text">Scroll to explore</span>
+  </div>
+</section>
+
+<!-- METRICS -->
+<div class="metrics">
+  <div class="metric-item fade-up">
+    <div class="metric-num">98<sup>%</sup></div>
+    <div class="metric-label">Reasoning Accuracy</div>
+  </div>
+  <div class="metric-item fade-up" style="transition-delay:0.1s">
+    <div class="metric-num">2.1<sup>×</sup></div>
+    <div class="metric-label">Faster Than Baseline</div>
+  </div>
+  <div class="metric-item fade-up" style="transition-delay:0.2s">
+    <div class="metric-num">128<sup>k</sup></div>
+    <div class="metric-label">Context Window</div>
+  </div>
+  <div class="metric-item fade-up" style="transition-delay:0.3s">
+    <div class="metric-num">50<sup>+</sup></div>
+    <div class="metric-label">Supported Domains</div>
+  </div>
+</div>
+
+<!-- CAPABILITIES -->
+<section id="capabilities">
+  <div class="section-header fade-up">
+    <div>
+      <p class="section-label">What Thesis Does</p>
+      <h2 class="section-title">Core<br>Capabilities</h2>
+    </div>
+    <p class="section-desc">Thesis is built on a foundation of multi-domain intelligence — from writing and code to strategy and research.</p>
+  </div>
+  <div class="capabilities-grid">
+    <div class="cap-card fade-up">
+      <div class="cap-icon">◈</div>
+      <p class="cap-num">/ 01</p>
+      <h3 class="cap-name">Advanced Reasoning</h3>
+      <p class="cap-desc">Multi-step logical chains, hypothesis testing, and structured argumentation. Thesis thinks through complex problems with precision and depth.</p>
+    </div>
+    <div class="cap-card fade-up" style="transition-delay:0.1s">
+      <div class="cap-icon">⌥</div>
+      <p class="cap-num">/ 02</p>
+      <h3 class="cap-name">Code Generation</h3>
+      <p class="cap-desc">Full-stack development support across 30+ languages. Write, review, debug, and architect software with a model that understands intention.</p>
+    </div>
+    <div class="cap-card fade-up" style="transition-delay:0.2s">
+      <div class="cap-icon">✦</div>
+      <p class="cap-num">/ 03</p>
+      <h3 class="cap-name">Creative Intelligence</h3>
+      <p class="cap-desc">From long-form writing to brand strategy, Thesis generates original, contextually aware content that resonates with real audiences.</p>
+    </div>
+    <div class="cap-card fade-up" style="transition-delay:0.1s">
+      <div class="cap-icon">⊕</div>
+      <p class="cap-num">/ 04</p>
+      <h3 class="cap-name">Research & Synthesis</h3>
+      <p class="cap-desc">Ingest large bodies of information and extract insight. Thesis connects dots across domains to surface what matters.</p>
+    </div>
+    <div class="cap-card fade-up" style="transition-delay:0.2s">
+      <div class="cap-icon">⇄</div>
+      <p class="cap-num">/ 05</p>
+      <h3 class="cap-name">Conversational Memory</h3>
+      <p class="cap-desc">Extended context window and coherent multi-turn dialogue. Thesis remembers, adapts, and builds on every exchange in a session.</p>
+    </div>
+    <div class="cap-card fade-up" style="transition-delay:0.3s">
+      <div class="cap-icon">◎</div>
+      <p class="cap-num">/ 06</p>
+      <h3 class="cap-name">Multimodal Input</h3>
+      <p class="cap-desc">Analyze images, documents, and data tables alongside text. Thesis processes the full picture to give richer, more accurate outputs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SHOWCASE -->
+<section id="showcase">
+  <div class="section-header fade-up">
+    <div>
+      <p class="section-label">In Action</p>
+      <h2 class="section-title">Use Cases</h2>
+    </div>
+    <p class="section-desc">Real-world applications of Thesis across industries and workflows.</p>
+  </div>
+  <div class="showcase-grid">
+    <div class="showcase-item featured fade-up">
+      <div class="showcase-visual vis-1">
+        <div class="blob" style="width:200px;height:200px;background:rgba(0,229,255,0.08);top:10%;left:10%;animation-delay:0s;"></div>
+        <div class="blob" style="width:150px;height:150px;background:rgba(0,100,180,0.1);bottom:15%;right:10%;animation-delay:2s;"></div>
+        <svg width="260" height="160" viewBox="0 0 260 160" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+          <rect x="0" y="0" width="260" height="160" rx="2" fill="rgba(255,255,255,0.03)" stroke="rgba(0,229,255,0.15)"/>
+          <text x="14" y="24" font-family="IBM Plex Mono" font-size="9" fill="#6b6b88">// thesis.generate()</text>
+          <text x="14" y="50" font-family="IBM Plex Mono" font-size="9" fill="rgba(0,229,255,0.8)">const result = await thesis</text>
+          <text x="14" y="68" font-family="IBM Plex Mono" font-size="9" fill="rgba(0,229,255,0.6)">  .reason({ prompt, context })</text>
+          <text x="14" y="86" font-family="IBM Plex Mono" font-size="9" fill="rgba(0,229,255,0.6)">  .stream();</text>
+          <rect x="14" y="104" width="180" height="1" fill="rgba(255,255,255,0.06)"/>
+          <text x="14" y="124" font-family="IBM Plex Mono" font-size="9" fill="#9898b8">→ Confidence: <tspan fill="#00e5ff">98.2%</tspan></text>
+          <text x="14" y="142" font-family="IBM Plex Mono" font-size="9" fill="#9898b8">→ Tokens: <tspan fill="#00e5ff">1,248</tspan> / Latency: <tspan fill="#00e5ff">312ms</tspan></text>
+        </svg>
+      </div>
+      <div class="showcase-info">
+        <p class="showcase-tag">Developer Tools</p>
+        <h3 class="showcase-name">API Integration & Code Intelligence</h3>
+        <p class="showcase-desc">Plug Thesis directly into your development workflow. Generate, review, and refactor code with a model that understands architecture and intent.</p>
+      </div>
+    </div>
+    <div class="showcase-item fade-up" style="transition-delay:0.1s">
+      <div class="showcase-visual vis-2" style="height:160px">
+        <div class="blob" style="width:120px;height:120px;background:rgba(0,229,255,0.07);top:0;right:0;animation-delay:1s;"></div>
+        <svg width="200" height="90" viewBox="0 0 200 90" fill="none" style="position:relative;z-index:1;">
+          <rect x="0" y="0" width="200" height="90" rx="2" fill="rgba(255,255,255,0.02)" stroke="rgba(0,229,255,0.1)"/>
+          <rect x="12" y="12" width="80" height="6" rx="1" fill="rgba(0,229,255,0.4)"/>
+          <rect x="12" y="26" width="160" height="4" rx="1" fill="rgba(255,255,255,0.08)"/>
+          <rect x="12" y="36" width="140" height="4" rx="1" fill="rgba(255,255,255,0.06)"/>
+          <rect x="12" y="46" width="100" height="4" rx="1" fill="rgba(255,255,255,0.05)"/>
+          <rect x="12" y="62" width="50" height="18" rx="2" fill="rgba(0,229,255,0.15)" stroke="rgba(0,229,255,0.3)"/>
+          <text x="22" y="75" font-family="IBM Plex Mono" font-size="7" fill="#00e5ff">Generate</text>
+        </svg>
+      </div>
+      <div class="showcase-info">
+        <p class="showcase-tag">Content</p>
+        <h3 class="showcase-name">Long-Form Writing & Strategy</h3>
+        <p class="showcase-desc">Reports, articles, brand copy, and strategy decks — Thesis writes with structure and voice.</p>
+      </div>
+    </div>
+    <div class="showcase-item fade-up" style="transition-delay:0.2s">
+      <div class="showcase-visual vis-3" style="height:160px">
+        <div class="blob" style="width:130px;height:130px;background:rgba(180,120,0,0.07);bottom:0;left:0;animation-delay:3s;"></div>
+        <svg width="200" height="90" viewBox="0 0 200 90" fill="none" style="position:relative;z-index:1;">
+          <line x1="10" y1="70" x2="10" y2="20" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <line x1="10" y1="70" x2="190" y2="70" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <polyline points="20,60 50,42 80,50 110,28 140,35 170,15 190,20" stroke="rgba(0,229,255,0.7)" stroke-width="1.5" fill="none"/>
+          <polyline points="20,60 50,42 80,50 110,28 140,35 170,15 190,20 190,70 20,70" fill="rgba(0,229,255,0.06)"/>
+          <circle cx="170" cy="15" r="3" fill="#00e5ff"/>
+          <text x="155" y="10" font-family="IBM Plex Mono" font-size="7" fill="#00e5ff">+24%</text>
+        </svg>
+      </div>
+      <div class="showcase-info">
+        <p class="showcase-tag">Analytics</p>
+        <h3 class="showcase-name">Data Analysis & Insight</h3>
+        <p class="showcase-desc">Feed Thesis your data and get clear interpretation, narrative summaries, and strategic recommendations.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECHNICAL -->
+<section id="technical">
+  <div class="tech-layout">
+    <div class="tech-left fade-up">
+      <p class="section-label">Under the Hood</p>
+      <h2 class="section-title">Technical<br>Specifications</h2>
+      <div class="tech-specs">
+        <div class="spec-row">
+          <span class="spec-key">Architecture</span>
+          <span class="spec-val">Transformer + MoE</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Context Window</span>
+          <span class="spec-val highlight">128,000 tokens</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Parameters</span>
+          <span class="spec-val">70B (active: 12B)</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Inference Speed</span>
+          <span class="spec-val highlight">~80 tokens/sec</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Fine-tuning</span>
+          <span class="spec-val">Supported</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">API Access</span>
+          <span class="spec-val highlight">REST + Streaming</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Deployment</span>
+          <span class="spec-val">Cloud & On-Premise</span>
+        </div>
+      </div>
+    </div>
+    <div class="tech-right fade-up" style="transition-delay:0.2s">
+      <p class="section-label">Benchmark Performance</p>
+      <div class="tech-bars" style="margin-top:1.5rem">
+        <div class="bar-item">
+          <div class="bar-header">
+            <span class="bar-label">Reasoning (MATH)</span>
+            <span class="bar-pct">94%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:94%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-header">
+            <span class="bar-label">Code (HumanEval)</span>
+            <span class="bar-pct">89%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:89%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-header">
+            <span class="bar-label">Language (MMLU)</span>
+            <span class="bar-pct">91%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:91%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-header">
+            <span class="bar-label">Multimodal (MMBench)</span>
+            <span class="bar-pct">86%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:86%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-header">
+            <span class="bar-label">Long Context (RULER)</span>
+            <span class="bar-pct">97%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:97%"></div></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-header">
+            <span class="bar-label">Safety & Alignment</span>
+            <span class="bar-pct">99%</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="--w:99%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-glow"></div>
+  <p class="contact-eyebrow fade-up">Get Started</p>
+  <h2 class="contact-headline fade-up">Ready to build<br>with <span style="color:var(--cyan)">Thesis?</span></h2>
+  <p class="contact-sub fade-up">Join the waitlist for early API access, or reach out to explore enterprise partnerships and custom deployments.</p>
+  <div class="contact-actions fade-up">
+    <a href="#" class="btn-primary">Join the Waitlist →</a>
+    <a href="mailto:hello@thesis.ai" class="btn-outline">Contact Us</a>
+    <a href="#" class="btn-outline">View Docs</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <div class="footer-dot"></div>
+    Thesis AI
+  </div>
+  <p>© 2026 Thesis. All rights reserved.</p>
+  <ul class="footer-links">
+    <li><a href="#">Docs</a></li>
+    <li><a href="#">GitHub</a></li>
+    <li><a href="#">Twitter</a></li>
+    <li><a href="#">LinkedIn</a></li>
+  </ul>
+</footer>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Bar animation
+const barObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.bar-fill').forEach(bar => bar.classList.add('animate'));
+    }
+  });
+}, { threshold: 0.3 });
+const techSection = document.querySelector('#technical');
+if (techSection) barObserver.observe(techSection);
+</script>
+</body>
+</html>
